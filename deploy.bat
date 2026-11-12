@@ -51,6 +51,12 @@ if errorlevel 1 (
 call gcloud projects add-iam-policy-binding %GCP_PROJECT% --member="serviceAccount:%SA_EMAIL%" --role="roles/datastore.user" --condition=None >nul
 if errorlevel 1 goto :error
 
+REM O deploy com --source usa a service account padrao do Compute Engine no Cloud Build.
+REM Em projetos novos ela nao recebe permissoes automaticamente (PERMISSION_DENIED no build).
+for /f "usebackq delims=" %%N in (`gcloud projects describe %GCP_PROJECT% --format^="value(projectNumber)"`) do set PROJECT_NUMBER=%%N
+call gcloud projects add-iam-policy-binding %GCP_PROJECT% --member="serviceAccount:%PROJECT_NUMBER%-compute@developer.gserviceaccount.com" --role="roles/run.builder" --condition=None >nul
+if errorlevel 1 goto :error
+
 echo [5/6] Garantindo o AUTH_TOKEN no Secret Manager...
 call gcloud secrets describe %SECRET_NAME% >nul 2>&1
 if errorlevel 1 (

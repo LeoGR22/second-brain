@@ -44,6 +44,11 @@ fi
 gcloud projects add-iam-policy-binding "$GCP_PROJECT" \
     --member="serviceAccount:$SA_EMAIL" --role="roles/datastore.user" --condition=None >/dev/null
 
+PROJECT_NUMBER=$(gcloud projects describe "$GCP_PROJECT" --format='value(projectNumber)')
+gcloud projects add-iam-policy-binding "$GCP_PROJECT" \
+    --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+    --role="roles/run.builder" --condition=None >/dev/null
+
 echo "[5/6] Garantindo o AUTH_TOKEN no Secret Manager..."
 if ! gcloud secrets describe "$SECRET_NAME" >/dev/null 2>&1; then
     openssl rand -hex 32 | tr -d '\n' | \
