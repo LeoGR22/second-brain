@@ -1,0 +1,66 @@
+name: Test & Deploy to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  SERVICE_NAME: second-brain-mcp
+  SECRET_NAME: second-brain-auth-token
+  RUNTIME_SA: second-brain-run
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements-dev.txt
+
+      - run: pytest -q
+
+  deploy:
+    name: Build & Deploy
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # necessário para o Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Sem chave JSON: o GitHub troca um token OIDC de curta duração por credenciais do GCP
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SA }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --source . \
+            --region "$REGION" \
+            --service-account "${RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com" \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 1 \
+            --memory 512Mi \
+            --cpu 1 \
+            --set-secrets "AUTH_TOKEN=${SECRET_NAME}:latest" \
+            --set-env-vars "STORAGE_BACKEND=firestore,GCP_PROJECT_ID=${PROJECT_ID},FIRESTORE_COLLECTION=second_brain_memories"
