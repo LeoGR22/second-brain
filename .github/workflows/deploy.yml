@@ -36,12 +36,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write   # necessário para o Workload Identity Federation
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
 
-      # Sem chave JSON: o GitHub troca um token OIDC de curta duração por credenciais do GCP
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -62,5 +61,5 @@ jobs:
             --max-instances 1 \
             --memory 512Mi \
             --cpu 1 \
-            --set-secrets "AUTH_TOKEN=${SECRET_NAME}:latest" \
+            --update-secrets "AUTH_TOKEN=${SECRET_NAME}:latest" \
             --set-env-vars "STORAGE_BACKEND=firestore,GCP_PROJECT_ID=${PROJECT_ID},FIRESTORE_COLLECTION=second_brain_memories"
