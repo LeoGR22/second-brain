@@ -11,6 +11,7 @@ os.environ.update(
     AUTH_TOKEN="test-token",
     STORAGE_BACKEND="sqlite",
     SQLITE_DB_PATH=str(Path(_TMP) / "app.db"),
+    BLOCKED_TERMS="Empresa X, projeto ômega",
 )
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

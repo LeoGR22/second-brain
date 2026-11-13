@@ -85,3 +85,28 @@ def test_save_update_search_and_remove_through_mcp(client):
 
     assert "lixeira" in call_tool(client, "remover_memoria", {"memoria_id": memory_id})
     assert "Nenhuma memória" in call_tool(client, "buscar_memorias", {"tag": "cloud-run"})
+
+
+def test_save_is_rejected_when_content_has_blocked_term(client):
+    body = parse(rpc(client, "tools/call", {"name": "salvar_memoria", "arguments": {
+        "titulo": "Deploy do Projeto Omega",
+        "conteudo": "Passo a passo do deploy.",
+    }}))["result"]
+
+    assert body["isError"] is True
+    assert "termo bloqueado" in body["content"][0]["text"]
+    assert "Nenhuma memória" in call_tool(client, "buscar_memorias", {"busca": "Omega"})
+
+
+def test_update_is_rejected_when_content_has_credential(client):
+    saved = call_tool(client, "salvar_memoria", {"titulo": "Config do deploy", "conteudo": "Usar Secret Manager."})
+    memory_id = saved.split("ID: ")[1].split("\n")[0]
+
+    body = parse(rpc(client, "tools/call", {"name": "atualizar_memoria", "arguments": {
+        "memoria_id": memory_id,
+        "conteudo": "Header: Authorization: Bearer " + "a1b2c3d4" * 8,
+    }}))["result"]
+
+    assert body["isError"] is True
+    assert "credencial" in body["content"][0]["text"]
+    assert "Usar Secret Manager." in call_tool(client, "obter_memoria_por_id", {"memoria_id": memory_id})

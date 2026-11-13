@@ -2,8 +2,11 @@ import json
 from typing import List, Optional
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 
+from src.config import settings
+from src.guard import ContentGuard, ContentRejected, parse_terms
 from src.storage import get_storage
 
 # Inicializa o servidor FastMCP
@@ -23,6 +26,14 @@ mcp = FastMCP(
 )
 
 storage = get_storage()
+guard = ContentGuard.from_terms(parse_terms(settings.blocked_terms))
+
+
+def _check_content(**fields) -> None:
+    try:
+        guard.check(**fields)
+    except ContentRejected as exc:
+        raise ToolError(str(exc)) from exc
 
 
 def _format_memory(index: int, r: dict) -> str:
@@ -57,7 +68,12 @@ def salvar_memoria(
         tags: Lista de tags para categorização (ex: ['docker', 'python', 'ci-cd'])
         projeto: Nome do projeto onde isso ocorreu (ex: 'second-brain', 'contract-extractor')
         url_referencia: Link opcional de referência (PR, issue, doc, commit)
+
+    O servidor recusa conteúdo com credenciais ou termos bloqueados. Se isso acontecer,
+    reescreva a memória de forma genérica e tente de novo.
     """
+    _check_content(titulo=titulo, conteudo=conteudo, categoria=categoria, tags=tags,
+                   projeto=projeto, url_referencia=url_referencia)
     mem = storage.save_memory(
         titulo=titulo,
         conteudo=conteudo,
@@ -92,7 +108,12 @@ def atualizar_memoria(
         tags: Nova lista de tags (substitui a anterior)
         projeto: Novo projeto
         url_referencia: Novo link de referência
+
+    O servidor recusa conteúdo com credenciais ou termos bloqueados. Se isso acontecer,
+    reescreva a memória de forma genérica e tente de novo.
     """
+    _check_content(titulo=titulo, conteudo=conteudo, categoria=categoria, tags=tags,
+                   projeto=projeto, url_referencia=url_referencia)
     mem = storage.update_memory(
         memoria_id,
         titulo=titulo,

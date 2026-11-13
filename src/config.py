@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     # Para testes locais com o emulador (ex: localhost:8085). Nunca defina em produção.
     firestore_emulator_host: Optional[str] = None
 
+    blocked_terms: str = ""
+
     # SQLite
     sqlite_db_path: str = "local_storage/memories.db"
 

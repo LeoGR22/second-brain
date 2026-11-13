@@ -143,6 +143,21 @@ python scripts/smoke_test.py --url https://<seu-servico>.run.app/mcp --token <to
 
 ---
 
+## 🛡️ Barreira de Conteúdo
+
+`salvar_memoria` e `atualizar_memoria` recusam conteúdo sensível antes de gravar, independentemente do que o agente decidir. Quando isso acontece, o agente recebe o motivo e pode reescrever a memória de forma genérica.
+
+* **Credenciais:** tokens Bearer, chaves privadas, chaves AWS/Google/GitHub/Slack, chaves `sk-`, JWTs, segredos hexadecimais longos e atribuições como `password = "..."`.
+* **Termos bloqueados:** lista própria em `BLOCKED_TERMS` (ex: nome da empresa, siglas de projetos internos, clientes). A comparação ignora maiúsculas e acentos e considera palavras inteiras.
+
+A lista de termos não fica no código. Localmente, use o `.env`. No Cloud Run, o `deploy.sh` pergunta os termos na primeira execução e guarda no Secret Manager (`second-brain-blocked-terms`). Para mudar depois:
+
+```bash
+UPDATE_BLOCKED_TERMS=1 ./deploy.sh   # ou: deploy.bat terms
+```
+
+---
+
 ## 🔁 Deploy Automático (GitHub Actions)
 
 O workflow `.github/workflows/deploy.yml` roda os testes em todo push e PR, e faz o deploy quando há push na `main`. A autenticação usa **Workload Identity Federation**, sem chave JSON de service account guardada no GitHub.
