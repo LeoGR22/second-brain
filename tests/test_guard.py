@@ -6,15 +6,15 @@ guard = ContentGuard.from_terms(["Empresa X", "GD", "projeto ômega"])
 
 
 @pytest.mark.parametrize("text", [
-    "Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456",
-    "-----BEGIN RSA PRIVATE KEY-----",
-    "AKIAIOSFODNN7EXAMPLE",
-    "AIzaSyA1234567890abcdefghijklmnopqrstuv",
+    "Authorization: Bearer " + "x" * 32,
+    "-----BEGIN " + "RSA PRIVATE KEY-----",
+    "AKIA" + "Z" * 16,
+    "AIza" + "B" * 35,
     "ghp_" + "a" * 36,
-    "sk-ant-api03-abcdefghijklmnopqrstuvwxyz",
-    "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+    "sk-" + "ant-" + "x" * 24,
+    "eyJ" + "a" * 12 + ".eyJ" + "b" * 12 + "." + "c" * 12,
     "token: " + "0123abcd" * 8,
-    'password = "minhaSenha123"',
+    'password = "' + "q" * 12 + '"',
 ])
 def test_detects_credentials(text):
     with pytest.raises(ContentRejected, match="credencial"):
